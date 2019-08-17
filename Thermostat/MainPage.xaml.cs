@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Dht.Sharp;
+using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using Windows.Devices.Gpio;
@@ -14,8 +15,8 @@ namespace Themostat
     /// </summary>
     public sealed partial class MainPage : Page
     {
-
         private const int AC_PIN = 3;
+        IDht _sensor = new Dht22(GpioController.GetDefault()?.OpenPin(AC_PIN), GpioController.GetDefault()?.OpenPin(AC_PIN));
         private const int Heat_PIN = 5;
 
         public static Tempeture tempeture = new Tempeture();
@@ -35,6 +36,22 @@ namespace Themostat
             tempeture.HeatPin.SetDriveMode(GpioPinDriveMode.Output);
             tempeture.AcPin.Write(GpioPinValue.Low);
             tempeture.HeatPin.Write(GpioPinValue.Low);
+        }
+
+        public async System.Threading.Tasks.Task getTempetureAsync()
+        {
+            IDhtReading reading = await _sensor.GetReadingAsync();
+            // ***
+            // *** Check the result.
+            // ***
+            if (reading.Result == DhtReadingResult.Valid)
+            {
+                System.Diagnostics.Debug.WriteLine($"Temperature = {reading.Temperature:0.0} C, Humidity = {reading.Humidity:0.0}%");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Error = {reading.Result}");
+            }
         }
 
         private async void getOutTempeture()
